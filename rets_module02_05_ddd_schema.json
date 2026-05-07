@@ -1,0 +1,147 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RETS-MODULE-02 Data Schema",
+  "description": "이해관계자 및 인터뷰 매니징 모듈의 내부 데이터 객체 스키마 정의",
+  "version": "1.0",
+  "definitions": {
+    "Stakeholder": {
+      "type": "object",
+      "description": "이해관계자 객체",
+      "required": ["stakeholder_id", "name", "role", "power", "interest", "created_at", "updated_at"],
+      "properties": {
+        "stakeholder_id": { "type": "string", "description": "고유 ID (예: STK-001)" },
+        "name":           { "type": "string", "minLength": 1, "description": "이름" },
+        "role":           { "type": "string", "minLength": 1, "description": "역할" },
+        "organization":   { "type": "string", "description": "소속 조직" },
+        "contact":        { "type": "string", "description": "연락처" },
+        "power":          { "type": "integer", "minimum": 1, "maximum": 5, "description": "영향력 (1~5)" },
+        "interest":       { "type": "integer", "minimum": 1, "maximum": 5, "description": "관심도 (1~5)" },
+        "notes":          { "type": "string", "description": "메모" },
+        "created_at":     { "type": "string", "format": "date-time" },
+        "updated_at":     { "type": "string", "format": "date-time" }
+      }
+    },
+    "InterviewPlan": {
+      "type": "object",
+      "description": "인터뷰 계획 객체",
+      "required": ["interview_id", "title", "stakeholder_id", "scheduled_at", "status", "created_at", "updated_at"],
+      "properties": {
+        "interview_id":            { "type": "string", "description": "고유 ID (예: INT-001)" },
+        "title":                   { "type": "string", "minLength": 1, "description": "인터뷰 제목" },
+        "purpose":                 { "type": "string", "description": "인터뷰 목적" },
+        "stakeholder_id":          { "type": "string", "description": "대상 이해관계자 ID" },
+        "related_req_ids":         { "type": "array", "items": { "type": "string" }, "description": "관련 요구사항 ID 목록" },
+        "participants":            { "type": "array", "items": { "type": "string" }, "description": "참여자 목록" },
+        "scheduled_at":            { "type": "string", "format": "date-time", "description": "예정 일시" },
+        "location":                { "type": "string", "description": "장소 또는 URL" },
+        "estimated_duration_min":  { "type": "integer", "minimum": 1, "description": "예상 소요시간(분)" },
+        "status":                  { "type": "string", "enum": ["예정", "완료", "취소"] },
+        "questionnaire_id":        { "type": "string", "description": "연결된 질문지 ID" },
+        "result_id":               { "type": "string", "description": "연결된 결과 ID" },
+        "created_at":              { "type": "string", "format": "date-time" },
+        "updated_at":              { "type": "string", "format": "date-time" }
+      }
+    },
+    "Questionnaire": {
+      "type": "object",
+      "description": "질문지 객체",
+      "required": ["questionnaire_id", "interview_id", "version", "generated_by", "items", "created_at"],
+      "properties": {
+        "questionnaire_id":   { "type": "string", "description": "고유 ID (예: QST-001)" },
+        "interview_id":       { "type": "string", "description": "소속 인터뷰 계획 ID" },
+        "version":            { "type": "integer", "minimum": 1, "description": "버전 번호" },
+        "generated_by":       { "type": "string", "enum": ["LLM", "Manual"], "description": "생성 방식" },
+        "llm_prompt_context": { "type": "string", "description": "LLM 호출 시 사용된 컨텍스트" },
+        "items":              { "type": "array", "items": { "$ref": "#/definitions/QuestionItem" } },
+        "created_at":         { "type": "string", "format": "date-time" }
+      }
+    },
+    "QuestionItem": {
+      "type": "object",
+      "description": "질문 항목 객체",
+      "required": ["item_id", "questionnaire_id", "order", "content", "source", "acceptance_status", "created_at"],
+      "properties": {
+        "item_id":           { "type": "string", "description": "고유 ID (예: QI-001)" },
+        "questionnaire_id":  { "type": "string", "description": "소속 질문지 ID" },
+        "order":             { "type": "integer", "minimum": 1, "description": "정렬 순서" },
+        "content":           { "type": "string", "minLength": 1, "description": "질문 내용" },
+        "source":            { "type": "string", "enum": ["LLM", "Manual"] },
+        "acceptance_status": { "type": "string", "enum": ["Pending", "Accepted", "Rejected"] },
+        "related_req_ids":   { "type": "array", "items": { "type": "string" } },
+        "created_at":        { "type": "string", "format": "date-time" }
+      }
+    },
+    "InterviewResult": {
+      "type": "object",
+      "description": "인터뷰 결과 객체",
+      "required": ["result_id", "interview_id", "raw_notes", "created_at", "updated_at"],
+      "properties": {
+        "result_id":        { "type": "string", "description": "고유 ID (예: RES-001)" },
+        "interview_id":     { "type": "string", "description": "소속 인터뷰 계획 ID" },
+        "raw_notes":        { "type": "string", "description": "원본 인터뷰 메모" },
+        "structured_items": { "type": "array", "items": { "$ref": "#/definitions/InterviewResultItem" } },
+        "action_items":     { "type": "array", "items": { "$ref": "#/definitions/ActionItem" } },
+        "created_at":       { "type": "string", "format": "date-time" },
+        "updated_at":       { "type": "string", "format": "date-time" }
+      }
+    },
+    "InterviewResultItem": {
+      "type": "object",
+      "description": "구조화된 인터뷰 결과 항목",
+      "required": ["item_id", "result_id", "content", "source", "acceptance_status"],
+      "properties": {
+        "item_id":                  { "type": "string", "description": "채번 ID (예: INT-001-01)" },
+        "result_id":                { "type": "string", "description": "소속 인터뷰 결과 ID" },
+        "content":                  { "type": "string", "minLength": 1, "description": "구조화된 항목 내용" },
+        "source":                   { "type": "string", "enum": ["LLM", "Manual"] },
+        "acceptance_status":        { "type": "string", "enum": ["Pending", "Accepted", "Rejected"] },
+        "mappings":                 { "type": "array", "items": { "$ref": "#/definitions/RequirementMapping" } },
+        "is_action_item_candidate": { "type": "boolean", "description": "액션아이템 후보 여부" }
+      }
+    },
+    "RequirementMapping": {
+      "type": "object",
+      "description": "요구사항 매핑 객체",
+      "required": ["mapping_id", "interview_id", "item_id", "req_id", "mapping_type", "acceptance_status", "created_at"],
+      "properties": {
+        "mapping_id":        { "type": "string", "description": "고유 ID" },
+        "interview_id":      { "type": "string", "description": "소속 인터뷰 ID" },
+        "item_id":           { "type": "string", "description": "인터뷰 결과 항목 ID" },
+        "req_id":            { "type": "string", "description": "매핑된 요구사항 ID" },
+        "mapping_type":      { "type": "string", "enum": ["Explicit", "Inferred"], "description": "매핑 방식" },
+        "confidence_level":  { "type": "string", "enum": ["High", "Medium", "Low"], "description": "추론 신뢰도" },
+        "content_excerpt":   { "type": "string", "description": "관련 인터뷰 내용 발췌" },
+        "acceptance_status": { "type": "string", "enum": ["Pending", "Accepted", "Rejected"] },
+        "created_at":        { "type": "string", "format": "date-time" }
+      }
+    },
+    "ActionItem": {
+      "type": "object",
+      "description": "액션아이템 객체",
+      "required": ["action_id", "interview_id", "content", "status", "created_at", "updated_at"],
+      "properties": {
+        "action_id":       { "type": "string", "description": "고유 ID (예: ACT-001)" },
+        "interview_id":    { "type": "string", "description": "출처 인터뷰 ID" },
+        "result_item_id":  { "type": "string", "description": "출처 구조화 항목 ID" },
+        "content":         { "type": "string", "minLength": 1, "description": "액션아이템 내용" },
+        "assignee":        { "type": "string", "description": "담당자" },
+        "due_date":        { "type": "string", "format": "date", "description": "완료 목표일" },
+        "status":          { "type": "string", "enum": ["미완료", "완료", "취소"] },
+        "created_at":      { "type": "string", "format": "date-time" },
+        "updated_at":      { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "AppState": {
+    "type": "object",
+    "description": "앱 전체 상태 (localStorage 저장 단위)",
+    "properties": {
+      "requirements":   { "type": "array", "items": { "description": "rets_02c_req_schema.json Requirement 객체" } },
+      "stakeholders":   { "type": "array", "items": { "$ref": "#/definitions/Stakeholder" } },
+      "interviewPlans": { "type": "array", "items": { "$ref": "#/definitions/InterviewPlan" } },
+      "questionnaires": { "type": "array", "items": { "$ref": "#/definitions/Questionnaire" } },
+      "results":        { "type": "array", "items": { "$ref": "#/definitions/InterviewResult" } },
+      "actionItems":    { "type": "array", "items": { "$ref": "#/definitions/ActionItem" } }
+    }
+  }
+}
